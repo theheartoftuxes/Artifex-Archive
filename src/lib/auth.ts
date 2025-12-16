@@ -5,7 +5,7 @@ import { prisma } from "./db";
 import type { Adapter } from "next-auth/adapters";
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter({ prisma }) as Adapter,
+  adapter: PrismaAdapter(prisma) as Adapter,
   debug: process.env.NODE_ENV === "development", // Enable debug logging in development
   providers: [
     GoogleProvider({
