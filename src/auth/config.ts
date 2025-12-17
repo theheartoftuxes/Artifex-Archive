@@ -1,33 +1,63 @@
-import { NextAuthOptions } from "next-auth";
-import { PrismaAdapter } from "@auth/prisma-adapter";
-import GoogleProvider from "next-auth/providers/google";
-import { prisma } from "./db";
-import type { Adapter } from "next-auth/adapters";
+import NextAuth from "next-auth";
+import Google from "next-auth/providers/google";
+import { prisma } from "@/lib/db";
 
-export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma) as Adapter,
-  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
-  debug: process.env.NODE_ENV === "development", // Enable debug logging in development
+export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID || "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     }),
   ],
-  session: {
-    strategy: "jwt",
-  },
+  session: { strategy: "jwt" }, // Critical: JWT for Vercel/Edge compatibility
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
   pages: {
     signIn: "/login",
   },
   callbacks: {
+    async signIn({ user, account, profile }) {
+      // Create or update user in database on sign in
+      if (user.email) {
+        try {
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email },
+          });
+
+          if (!existingUser) {
+            // Create new user
+            await prisma.user.create({
+              data: {
+                id: user.id!,
+                email: user.email,
+                name: user.name || null,
+                image: user.image || null,
+                emailVerified: new Date(),
+              },
+            });
+          } else {
+            // Update existing user if needed
+            await prisma.user.update({
+              where: { id: existingUser.id },
+              data: {
+                name: user.name || existingUser.name,
+                image: user.image || existingUser.image,
+              },
+            });
+          }
+        } catch (error) {
+          console.error("Error creating/updating user:", error);
+          // Don't block sign in if DB update fails
+        }
+      }
+      return true;
+    },
     async jwt({ token, user, account }) {
       // Initial sign in
       if (user) {
         token.id = user.id;
         
         try {
-          // Fetch user from database
+          // Fetch user from database to get/update username
           const dbUser = await prisma.user.findUnique({
             where: { id: user.id },
             select: { username: true, email: true },
@@ -71,9 +101,9 @@ export const authOptions: NextAuthOptions = {
         } catch (error) {
           // Log error but don't fail authentication
           console.error("Error in JWT callback:", error);
-          // Continue without username for now
         }
       }
+      
       // On subsequent requests, refresh username if needed
       if (token.id && !token.username) {
         try {
@@ -85,18 +115,19 @@ export const authOptions: NextAuthOptions = {
             token.username = dbUser.username;
           }
         } catch (error) {
-          // Log error but don't fail the request
           console.error("Error fetching username:", error);
         }
       }
+      
       return token;
     },
     async session({ session, token }) {
-      if (session.user && token) {
+      if (token && session.user) {
         session.user.id = token.id as string;
         session.user.username = token.username as string | undefined;
       }
       return session;
     },
   },
-};
+});
+

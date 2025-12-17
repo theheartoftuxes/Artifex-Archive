@@ -1,33 +1,31 @@
-import { withAuth } from "next-auth/middleware";
+import { auth } from "@/auth/config";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export default withAuth(
-  function middleware(req) {
-    // You can add additional logic here if needed
-    // For example, you could check user roles or permissions
-    return NextResponse.next();
-  },
-  {
-    callbacks: {
-      authorized: ({ token }) => {
-        // Only allow access if user has a valid token
-        return !!token;
-      },
-    },
-    pages: {
-      signIn: "/login",
-    },
+export async function middleware(request: NextRequest) {
+  const session = await auth();
+  
+  // Protect these routes - users must be authenticated to access
+  const protectedPaths = ["/upload", "/account", "/admin"];
+  const isProtectedPath = protectedPaths.some(path => 
+    request.nextUrl.pathname.startsWith(path)
+  );
+  
+  if (isProtectedPath && !session) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("callbackUrl", request.nextUrl.pathname);
+    return NextResponse.redirect(loginUrl);
   }
-);
+  
+  return NextResponse.next();
+}
 
-// Protect these routes - users must be authenticated to access
 export const config = {
   matcher: [
     "/upload/:path*",
     "/account/:path*",
     "/admin/:path*",
     // Add more protected routes here as needed
-    // Example: "/dashboard/:path*", "/settings/:path*"
     // Note: Auth API routes are automatically excluded
   ],
 };

@@ -1,14 +1,13 @@
 import { prisma } from "@/lib/db";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/auth/config";
 
 export async function createContext() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   
   return {
     db: prisma,
     session,
-    user: session?.user,
+    user: session?.user || null,
   };
 }
 

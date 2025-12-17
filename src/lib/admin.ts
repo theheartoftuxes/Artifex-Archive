@@ -1,5 +1,4 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "./auth";
+import { auth } from "@/auth/config";
 
 /**
  * Check if a user is an admin based on their email (server-side only)
@@ -18,7 +17,7 @@ export function isAdminEmail(email: string | null | undefined): boolean {
  * @returns true if current user is an admin
  */
 export async function isAdmin(): Promise<boolean> {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   return isAdminEmail(session?.user?.email || null);
 }
 
