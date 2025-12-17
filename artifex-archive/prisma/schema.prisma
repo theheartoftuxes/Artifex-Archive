@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  MUSIC
+  GAME
+  TEXT
+}
+
+enum Visibility {
+  PUBLIC
+  UNLISTED
+  HIDDEN
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  username      String?   @unique
+  bio           String?   @db.Text
+  isBanned      Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+
+  accounts      Account[]
+  sessions      Session[]
+  mediaItems    MediaItem[]
+  ratings       Rating[]
+  saves         Save[]
+  activities    Activity[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model MediaItem {
+  id            String         @id @default(cuid())
+  title         String
+  description   String?
+  mediaType     MediaType
+  mediaUrl      String
+  thumbnailUrl  String?
+  creatorId     String
+  createdAt     DateTime       @default(now())
+  aiModelUsed   String?
+  promptSummary String?
+  visibility    Visibility     @default(PUBLIC)
+  license       String?
+  avgRating     Float?         @default(0)
+  ratingCount   Int            @default(0)
+  ratingTotal   Int            @default(0)
+  saveCount     Int            @default(0)
+  viewCount     Int            @default(0)
+  deletedAt     DateTime?
+  searchVector  Unsupported("tsvector")?
+
+  creator       User           @relation(fields: [creatorId], references: [id])
+  tags          Tag[]
+  metadata      MediaMetadata?
+  ratings       Rating[]
+  saves         Save[]
+  activities    Activity[]
+
+  @@index([mediaType])
+  @@index([createdAt])
+  @@index([visibility])
+  @@map("media_items")
+}
+
+model Tag {
+  id         String      @id @default(cuid())
+  name       String      @unique
+  mediaItems MediaItem[]
+
+  @@index([name])
+  @@map("tags")
+}
+
+model MediaMetadata {
+  id         String    @id @default(cuid())
+  mediaItemId String   @unique
+  duration   Int?      // in seconds
+  dimensions String?  // e.g., "1920x1080" or "3000x2000"
+  fileSize   Int?      // in bytes
+  format     String?   // e.g., "mp4", "png", "mp3", "json"
+  bpm        Int?      // beats per minute (for music)
+  genre      String?   // e.g., "electronic", "ambient", "action"
+
+  mediaItem MediaItem @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
+
+  @@map("media_metadata")
+}
+
+model Rating {
+  id         String    @id @default(cuid())
+  userId     String
+  mediaItemId String
+  value      Int       // 1-5
+  createdAt  DateTime  @default(now())
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mediaItem  MediaItem @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, mediaItemId])
+  @@index([mediaItemId])
+  @@map("ratings")
+}
+
+model Save {
+  id         String    @id @default(cuid())
+  userId     String
+  mediaItemId String
+  createdAt  DateTime  @default(now())
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mediaItem  MediaItem @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, mediaItemId])
+  @@index([userId])
+  @@index([mediaItemId])
+  @@map("saves")
+}
+
+model Activity {
+  id         String    @id @default(cuid())
+  userId     String?
+  action     String    // "VIEW" | "RATE" | "SAVE" | "UPLOAD"
+  mediaItemId String?
+  createdAt  DateTime  @default(now())
+
+  user       User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mediaItem  MediaItem? @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([mediaItemId])
+  @@index([createdAt])
+  @@map("activities")
+}
