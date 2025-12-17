@@ -6,6 +6,7 @@ import type { Adapter } from "next-auth/adapters";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as Adapter,
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === "development", // Enable debug logging in development
   providers: [
     GoogleProvider({
@@ -25,56 +26,67 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         
-        // Fetch user from database
-        const dbUser = await prisma.user.findUnique({
-          where: { id: user.id },
-          select: { username: true, email: true },
-        });
+        try {
+          // Fetch user from database
+          const dbUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { username: true, email: true },
+          });
 
-        // Auto-generate username on first login if not set
-        if (!dbUser?.username && dbUser?.email) {
-          // Extract email prefix (before @)
-          const emailPrefix = dbUser.email.split("@")[0];
-          // Clean email prefix (remove special characters, keep only alphanumeric)
-          const cleanPrefix = emailPrefix.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
-          // Generate random suffix (4 digits)
-          const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-          let username = `${cleanPrefix}${randomSuffix}`;
-          
-          // Ensure username is unique
-          let attempts = 0;
-          while (attempts < 10) {
-            const existingUser = await prisma.user.findUnique({
-              where: { username },
-            });
+          // Auto-generate username on first login if not set
+          if (!dbUser?.username && dbUser?.email) {
+            // Extract email prefix (before @)
+            const emailPrefix = dbUser.email.split("@")[0];
+            // Clean email prefix (remove special characters, keep only alphanumeric)
+            const cleanPrefix = emailPrefix.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+            // Generate random suffix (4 digits)
+            const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+            let username = `${cleanPrefix}${randomSuffix}`;
             
-            if (!existingUser) {
-              // Username is available, update user
-              await prisma.user.update({
-                where: { id: user.id },
-                data: { username },
+            // Ensure username is unique
+            let attempts = 0;
+            while (attempts < 10) {
+              const existingUser = await prisma.user.findUnique({
+                where: { username },
               });
-              token.username = username;
-              break;
+              
+              if (!existingUser) {
+                // Username is available, update user
+                await prisma.user.update({
+                  where: { id: user.id },
+                  data: { username },
+                });
+                token.username = username;
+                break;
+              }
+              
+              // Try again with different random suffix
+              const newRandomSuffix = Math.floor(1000 + Math.random() * 9000);
+              username = `${cleanPrefix}${newRandomSuffix}`;
+              attempts++;
             }
-            
-            // Try again with different random suffix
-            const newRandomSuffix = Math.floor(1000 + Math.random() * 9000);
-            username = `${cleanPrefix}${newRandomSuffix}`;
-            attempts++;
+          } else if (dbUser?.username) {
+            token.username = dbUser.username;
           }
-        } else if (dbUser?.username) {
-          token.username = dbUser.username;
+        } catch (error) {
+          // Log error but don't fail authentication
+          console.error("Error in JWT callback:", error);
+          // Continue without username for now
         }
       }
       // On subsequent requests, refresh username if needed
       if (token.id && !token.username) {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.id as string },
-          select: { username: true },
-        });
-        if (dbUser?.username) {
-          token.username = dbUser.username;
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { username: true },
+          });
+          if (dbUser?.username) {
+            token.username = dbUser.username;
+          }
+        } catch (error) {
+          // Log error but don't fail the request
+          console.error("Error fetching username:", error);
         }
       }
       return token;
