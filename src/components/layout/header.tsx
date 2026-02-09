@@ -64,15 +64,15 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b border-teal-500/20 bg-[#1E1E1E]/95 backdrop-blur supports-[backdrop-filter]:bg-[#1E1E1E]/60">
       <div className="container flex h-16 items-center justify-between px-4">
         {/* Logo */}
         <Link
           href="/"
-          className="flex items-center space-x-2 text-xl font-light tracking-tight hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-sm"
-          aria-label="Artifex Archive Home"
+          className="flex items-center space-x-2 text-xl font-light tracking-tight text-[#00FFC3] hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-[#00FFC3] focus:ring-offset-2 rounded-sm"
+          aria-label="The Volosphere Home"
         >
-          <span>Artifex Archive</span>
+          <span>The Volosphere</span>
         </Link>
 
         {/* Search Bar - Hidden on mobile */}
@@ -81,20 +81,20 @@ export default function Header() {
           className="hidden md:flex flex-1 max-w-md mx-8"
         >
           <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#E0E0E0]/50" />
             <Input
               type="search"
               placeholder="Search titles, descriptions, models, tags..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-9 h-9 bg-muted/50 border-border"
+              className="pl-9 pr-9 h-9 bg-[#2A2A2A] border-[#3A3A3A] text-[#E0E0E0] placeholder:text-[#E0E0E0]/50 focus:border-[#00FFC3] focus:ring-[#00FFC3] focus-visible:ring-[#00FFC3]"
               aria-label="Search the archive"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={handleClear}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground hover:text-foreground transition-colors"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#E0E0E0]/50 hover:text-[#E0E0E0] transition-colors"
                 aria-label="Clear search"
               >
                 <X className="h-4 w-4" />
@@ -200,7 +200,7 @@ export default function Header() {
               variant="default"
               size="sm"
               onClick={() => router.push("/login")}
-              className="h-9"
+              className="h-9 bg-[#00FFC3] text-[#1E1E1E] hover:bg-[#00FFC3]/90"
             >
               Sign In
             </Button>

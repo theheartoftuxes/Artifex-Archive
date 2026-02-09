@@ -25,14 +25,14 @@ export default function PopularTags() {
   };
 
   return (
-    <div className="container mx-auto max-w-7xl px-4 py-4">
+    <div className="container mx-auto max-w-7xl px-4 py-4 bg-[#1E1E1E]">
       <div className="max-w-2xl mx-auto">
         <div className="flex flex-wrap gap-2 justify-center">
           {POPULAR_TAGS.map((tag) => (
             <Badge
               key={tag}
               variant="secondary"
-              className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors px-3 py-1"
+              className="cursor-pointer bg-[#00FFC3]/30 text-[#1E1E1E] font-medium hover:bg-[#00FFC3]/40 transition-colors px-3 py-1 border border-[#00FFC3]/40"
               onClick={() => handleTagClick(tag)}
             >
               {tag}

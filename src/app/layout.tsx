@@ -20,14 +20,14 @@ const geistMono = localFont({
 
 export const metadata: Metadata = {
   title: {
-    default: "Artifex Archive",
-    template: "%s | Artifex Archive",
+    default: "The Volosphere",
+    template: "%s | The Volosphere",
   },
-  description: "A canonical library for AI-generated media — images, music, video, games, and beyond.",
+  description: "A canonical library for AI-generated spheres — interactive worlds, images, music, video, games, and beyond.",
   keywords: ["AI art", "AI generated", "media library", "synthetic media", "digital archive", "AI images", "AI music", "AI video"],
-  authors: [{ name: "Artifex Archive" }],
-  creator: "Artifex Archive",
-  publisher: "Artifex Archive",
+  authors: [{ name: "The Volosphere" }],
+  creator: "The Volosphere",
+  publisher: "The Volosphere",
   metadataBase: new URL(
     process.env.NEXTAUTH_URL && process.env.NEXTAUTH_URL !== "your_nextauth_url_here"
       ? process.env.NEXTAUTH_URL
@@ -41,22 +41,22 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: "/",
-    siteName: "Artifex Archive",
-    title: "Artifex Archive",
-    description: "A canonical library for AI-generated media — images, music, video, games, and beyond.",
+    siteName: "The Volosphere",
+    title: "The Volosphere",
+    description: "A canonical library for AI-generated spheres — interactive worlds, images, music, video, games, and beyond.",
     images: [
       {
         url: "/og-image.png", // You'll need to add this image
         width: 1200,
         height: 630,
-        alt: "Artifex Archive",
+        alt: "The Volosphere",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Artifex Archive",
-    description: "A canonical library for AI-generated media — images, music, video, games, and beyond.",
+    title: "The Volosphere",
+    description: "A canonical library for AI-generated spheres — interactive worlds, images, music, video, games, and beyond.",
     images: ["/og-image.png"],
   },
   robots: {
@@ -84,7 +84,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#1E1E1E] text-[#E0E0E0]`}
       >
         <TRPCProvider>
           <AuthProvider>
